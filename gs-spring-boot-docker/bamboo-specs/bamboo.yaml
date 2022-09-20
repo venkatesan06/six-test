@@ -1,0 +1,37 @@
+version: 2
+plan:
+  project-key: SPRIN
+  key: PLAN
+  name: My Plan
+stages:
+- Build Stage:
+    manual: false
+    final: false
+    jobs:
+    - Build Job
+Build Job:
+  tasks:
+  - script:
+      interpreter: SHELL
+      scripts:
+      - |-
+        podman build -t venkatesan.jfrog.io/app-docker/app:5.4 --build-arg ARG_SERVER_PORT=8888 complete/
+        podman login venkatesan.jfrog.io -u${bamboo.JFROG_USER} -p${bamboo.JFROG_PASSWORD}
+        podman push venkatesan.jfrog.io/app-docker/app:5.4
+  - script:
+      interpreter: SHELL
+      scripts:
+      - |-
+        helm package ${chart_name} --version=${version}
+        helm repo add helm-wo-secret-helm https://venkatesan.jfrog.io/artifactory/api/helm/helm-wo-secret-helm --username venkatesan06.mvm@gmail.com --password AP6t1z5AmesHu5Y8xZUEJjBj7o3
+        curl -uvenkatesan06.mvm@gmail.com:AP6t1z5AmesHu5Y8xZUEJjBj7o3 -T ${chart_name}-${version}.tgz "https://venkatesan.jfrog.io/artifactory/helm-wo-secret-helm/${chart_name}-${version}.tgz"
+      environment: chart_name=my-chart version=0.1.1
+      conditions:
+      - variable:
+          equals:
+            is_package: 'true'
+      description: helm package
+variables:
+  JFROG_PASSWORD: BAMSCRT@0@0@nXjkn/IPBvrcy563dgMQYQ==
+  JFROG_USER: venkatesan06.mvm@gmail.com
+  is_package: false
